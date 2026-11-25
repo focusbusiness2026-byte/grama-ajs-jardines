@@ -59,6 +59,7 @@
 
   document.querySelectorAll('[data-contact], [data-service]').forEach(button => {
     button.addEventListener('click', () => {
+      if ($('#video-dialog').open) $('#video-dialog').close();
       form.reset();
       if (button.dataset.service) service.value = button.dataset.service;
       if (button.dataset.variety) variety.value = button.dataset.variety;
@@ -116,55 +117,28 @@
   document.addEventListener('keydown', e => { if(e.key === 'Escape') closeMenu(); });
   $('#year').textContent = new Date().getFullYear();
   const avatar = $('#alejandro-avatar');
-  const presenter = $('#presentacion');
-  const playPresentation = $('#presenter-play');
-  const previewToggle = $('#preview-toggle');
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  let fullPresentation = false;
-  function syncPreviewButton() {
-    previewToggle.textContent = avatar.paused ? '▶' : 'Ⅱ';
-    previewToggle.setAttribute('aria-label', avatar.paused ? 'Reproducir vista previa' : 'Pausar vista previa');
-  }
-  function playPreview() {
-    avatar.play().catch(syncPreviewButton);
-  }
-  if (reducedMotion.matches) { avatar.autoplay = false; avatar.pause(); }
-  else playPreview();
-  avatar.addEventListener('play', syncPreviewButton);
-  avatar.addEventListener('pause', syncPreviewButton);
-  previewToggle.addEventListener('click', () => {
-    if (avatar.paused) playPreview();
-    else avatar.pause();
-  });
-  playPresentation.addEventListener('click', () => {
-    if (!fullPresentation) {
-      fullPresentation = true;
-      avatar.pause();
-      avatar.src = window.matchMedia('(max-width: 600px)').matches ? avatar.dataset.vertical : avatar.dataset.horizontal;
-      avatar.loop = false;
-      avatar.autoplay = false;
+  const videoDialog = $('#video-dialog');
+  document.querySelectorAll('[data-video-open]').forEach(button => {
+    button.addEventListener('click', () => {
+      const vertical = window.matchMedia('(max-width: 600px)').matches;
+      const source = vertical ? avatar.dataset.vertical : avatar.dataset.horizontal;
+      videoDialog.classList.toggle('vertical-video', vertical);
+      avatar.poster = vertical ? 'assets/alejandro-avatar-vertical.webp' : 'assets/alejandro-avatar-horizontal.webp';
+      if (avatar.getAttribute('src') !== source) {
+        avatar.src = source;
+        avatar.load();
+      } else avatar.currentTime = 0;
       avatar.muted = false;
-      avatar.controls = true;
-      presenter.classList.add('is-playing');
-      previewToggle.hidden = true;
-      avatar.load();
-    } else avatar.currentTime = 0;
-    playPresentation.hidden = true;
-    avatar.play().catch(() => { playPresentation.hidden = false; });
+      openDialog(videoDialog);
+      avatar.play().catch(() => { /* Los controles permiten iniciar la reproducción. */ });
+    });
   });
-  avatar.addEventListener('ended', () => {
-    if (fullPresentation) {
-      playPresentation.querySelector('span:last-child').innerHTML = 'Volver a escuchar<small>La presentación de Alejandro · 17 s</small>';
-      playPresentation.hidden = false;
-    }
-  });
-  reducedMotion.addEventListener('change', e => {
-    if (e.matches && !fullPresentation) avatar.pause();
+  videoDialog.addEventListener('close', () => {
+    avatar.pause();
+    avatar.currentTime = 0;
   });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) avatar.pause();
-    else if (!fullPresentation && !reducedMotion.matches) playPreview();
   });
-  syncPreviewButton();
   updateMessage();
 })();
