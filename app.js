@@ -85,8 +85,10 @@
       if (e.target === dialog && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) dialog.close();
     });
     dialog.addEventListener('close', () => {
-      document.body.classList.remove('modal-open');
-      if (opener) opener.focus();
+      if (!document.querySelector('dialog[open]')) {
+        document.body.classList.remove('modal-open');
+        if (opener) opener.focus();
+      }
     });
   });
   document.querySelectorAll('[data-image]').forEach(button => button.addEventListener('click', () => {
